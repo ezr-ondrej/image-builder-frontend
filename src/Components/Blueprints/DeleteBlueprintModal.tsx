@@ -9,9 +9,13 @@ import {
 
 import {
   selectBlueprintSearchInput,
+  selectLimit,
+  selectOffset,
   selectSelectedBlueprintId,
   setBlueprintId,
+  setBlueprintsOffset,
 } from '../../store/BlueprintSlice';
+import { imageBuilderApi } from '../../store/enhancedImageBuilderApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   useDeleteBlueprintMutation,
@@ -28,9 +32,15 @@ export const DeleteBlueprintModal: React.FunctionComponent<
 > = ({ setShowDeleteModal, isOpen }: DeleteBlueprintModalProps) => {
   const selectedBlueprintId = useAppSelector(selectSelectedBlueprintId);
   const blueprintSearchInput = useAppSelector(selectBlueprintSearchInput);
+  const blueprintsOffset = useAppSelector(selectOffset);
+  const blueprintsLimit = useAppSelector(selectLimit);
   const dispatch = useAppDispatch();
   const { blueprintName } = useGetBlueprintsQuery(
-    { search: blueprintSearchInput },
+    {
+      search: blueprintSearchInput,
+      limit: blueprintsLimit,
+      offset: blueprintsOffset,
+    },
     {
       selectFromResult: ({ data }) => ({
         blueprintName: data?.data?.find(
@@ -47,7 +57,9 @@ export const DeleteBlueprintModal: React.FunctionComponent<
     if (selectedBlueprintId) {
       setShowDeleteModal(false);
       await deleteBlueprint({ id: selectedBlueprintId });
+      dispatch(setBlueprintsOffset(0));
       dispatch(setBlueprintId(undefined));
+      dispatch(imageBuilderApi.util.invalidateTags([{ type: 'Blueprints' }]));
     }
   };
   const onDeleteClose = () => {
