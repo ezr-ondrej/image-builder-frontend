@@ -117,20 +117,23 @@ export const handlers = [
   ),
   rest.get(`${IMAGE_BUILDER_API}/experimental/blueprints`, (req, res, ctx) => {
     const search = req.url.searchParams.get('search');
+    const limit = req.url.searchParams.get('limit') || "10";
+    const offset = req.url.searchParams.get('offset') || "0";
     const resp = Object.assign({}, mockGetBlueprints);
     if (search) {
       let regexp;
       try {
-        regexp = new RegExp(search);
+        regexp = new RegExp(search, "i");
       } catch (e) {
         const sanitized = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        regexp = new RegExp(sanitized);
+        regexp = new RegExp(sanitized, "i");
       }
-      resp.data = mockGetBlueprints.data.filter(({ name }) => {
+      resp.data = resp.data.filter(({ name }) => {
         return regexp.test(name);
       });
       resp.meta.count = resp.data.length;
     }
+    resp.data = resp.data.slice(parseInt(offset), parseInt(limit));
 
     return res(ctx.status(200), ctx.json(resp));
   }),
