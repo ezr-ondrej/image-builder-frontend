@@ -22,6 +22,7 @@ import ReviewWizardFooter from './steps/Review/Footer/Footer';
 import Aws from './steps/TargetEnvironment/Aws';
 import Azure from './steps/TargetEnvironment/Azure';
 import Gcp from './steps/TargetEnvironment/Gcp';
+import useStepValidation from './useStepValidation';
 import {
   isAwsAccountIdValid,
   isAzureTenantGUIDValid,
@@ -50,7 +51,6 @@ import {
   selectGcpShareMethod,
   selectImageTypes,
   selectRegistrationType,
-  selectStepValidation,
   addImageType,
 } from '../../store/wizardSlice';
 import { resolveRelPath } from '../../Utilities/path';
@@ -97,6 +97,8 @@ const CreateImageWizard = ({ startStepIndex = 1 }: CreateImageWizardProps) => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
 
+  const step = useStepValidation();
+
   // IMPORTANT: Ensure the wizard starts with a fresh initial state
   useEffect(() => {
     dispatch(initializeWizard());
@@ -140,9 +142,6 @@ const CreateImageWizard = ({ startStepIndex = 1 }: CreateImageWizardProps) => {
     _event: React.MouseEvent<HTMLButtonElement>,
     currentStep: WizardStepType
   ) => setCurrentStep(currentStep);
-
-  const fileSystemValidation = useAppSelector(selectStepValidation('file-system'));
-  const detailsValidation = useAppSelector(selectStepValidation('details'));
 
   return (
     <>
@@ -256,7 +255,10 @@ const CreateImageWizard = ({ startStepIndex = 1 }: CreateImageWizardProps) => {
           <WizardStep
             name="File system configuration"
             id="step-file-system"
-            footer={<CustomWizardFooter disableNext={fileSystemValidation === "error"} />}
+            isDisabled={step.fileSystem.disableStep}
+            footer={
+              <CustomWizardFooter disableNext={step.fileSystem.disableNext} />
+            }
           >
             <FileSystemStep />
           </WizardStep>
@@ -266,17 +268,27 @@ const CreateImageWizard = ({ startStepIndex = 1 }: CreateImageWizardProps) => {
             steps={[
               <WizardStep
                 name="Custom repositories"
+                isDisabled={step.customRepositories.disableStep}
                 id="wizard-custom-repositories"
                 key="wizard-custom-repositories"
-                footer={<CustomWizardFooter disableNext={false} />}
+                footer={
+                  <CustomWizardFooter
+                    disableNext={step.customRepositories.disableNext}
+                  />
+                }
               >
                 <RepositoriesStep />
               </WizardStep>,
               <WizardStep
                 name="Additional packages"
+                isDisabled={step.additionalPackages.disableStep}
                 id="wizard-additional-packages"
                 key="wizard-additional-packages"
-                footer={<CustomWizardFooter disableNext={false} />}
+                footer={
+                  <CustomWizardFooter
+                    disableNext={step.customRepositories.disableNext}
+                  />
+                }
               >
                 <PackagesStep />
               </WizardStep>,
@@ -285,22 +297,23 @@ const CreateImageWizard = ({ startStepIndex = 1 }: CreateImageWizardProps) => {
           <WizardStep
             name="Details"
             id="step-details"
+            isDisabled={step.details.disableStep}
             status={
               currentStep?.id !== 'step-details' &&
-              detailsValidation === 'error'
+              !step.details.disableStep &&
+              step.details.disableNext
                 ? 'error'
-                : 'default'
+                : undefined
             }
             footer={
-              <CustomWizardFooter
-                disableNext={detailsValidation !== 'success'}
-              />
+              <CustomWizardFooter disableNext={step.details.disableNext} />
             }
           >
             <DetailsStep />
           </WizardStep>
           <WizardStep
             name="Review"
+            isDisabled={step.review.disableStep}
             id="step-review"
             footer={<ReviewWizardFooter />}
           >
