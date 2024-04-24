@@ -28,16 +28,11 @@ import {
   removePartition,
   selectPartitions,
   changePartitionUnit,
-  selectFileSystemPartitionMode,
   selectInputErrors,
 } from '../../../../store/wizardSlice';
 import UsrSubDirectoriesDisabled from '../../UsrSubDirectoriesDisabled';
 import { StateValidatedInput } from '../../ValidatedTextInput';
-import {
-  getDuplicateMountPoints,
-  isFileSystemConfigValid,
-  isMountpointMinSizeValid,
-} from '../../validators';
+import { isMountpointMinSizeValid } from '../../validators';
 
 export type Partition = {
   id: string;
@@ -146,7 +141,13 @@ export const Row = ({
   onDrop,
 }: RowPropTypes) => {
   const dispatch = useAppDispatch();
-  const mountpointErrors = useAppSelector(selectInputErrors("file-system", `mountpoint-${partition.id}`));
+  // Was receiving undefined errors for the length check below so added: || []
+  // which could be added in the selectInputErrors method instead
+  const mountpointErrors =
+    useAppSelector(
+      selectInputErrors('file-system', `mountpoint-${partition.id}`)
+    ) || [];
+
   const handleRemovePartition = (id: string) => {
     dispatch(removePartition(id));
   };
@@ -166,7 +167,7 @@ export const Row = ({
       />
       <Td className="pf-m-width-20">
         <MountpointPrefix partition={partition} />
-        {mountpointErrors.length !== 0 && (
+        {mountpointErrors?.length !== 0 && (
           <Alert
             variant="danger"
             isInline
@@ -269,6 +270,9 @@ const MountpointSuffix = ({ partition }: MountpointSuffixPropTypes) => {
       value={suffix}
       type="text"
       onChange={(event: React.FormEvent, newValue) => {
+        //Prevents form "completion" on enter key press causing full page refresh
+        event.preventDefault();
+
         const mountpoint = prefix + normalizeSuffix(newValue);
         dispatch(
           changePartitionMountpoint({
